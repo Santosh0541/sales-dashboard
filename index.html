@@ -1,320 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sales Analytics Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --bg: #070b14;
-    --card: #0e1520;
-    --card2: #141d2e;
-    --border: #1e2d44;
-    --accent: #00d4ff;
-    --accent2: #7c3aed;
-    --green: #00e676;
-    --red: #ff5252;
-    --yellow: #ffd740;
-    --text: #e8f0fe;
-    --muted: #5c7a9e;
-    --radius: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; min-height: 100vh; }
-
-  header {
-    background: linear-gradient(135deg, #0e1520 0%, #070b14 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 18px 20px; display: flex; justify-content: space-between; align-items: center;
-  }
-  header h1 { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
-  header p { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
-  .live-dot { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--green); }
-  .live-dot::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  /* Filter Bar */
-  .filters { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; background: var(--card); border-bottom: 1px solid var(--border); }
-  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: 'Space Grotesk', sans-serif; font-size: 0.78rem; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-  .filter-btn.active { background: var(--accent); color: #070b14; border-color: var(--accent); font-weight: 700; }
-
-  /* KPI Cards */
-  .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 16px 16px 0; }
-  .kpi {
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px;
-    position: relative; overflow: hidden;
-  }
-  .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-  .kpi.blue::before { background: var(--accent); }
-  .kpi.purple::before { background: var(--accent2); }
-  .kpi.green::before { background: var(--green); }
-  .kpi.yellow::before { background: var(--yellow); }
-  .kpi .label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  .kpi .value { font-size: 1.4rem; font-weight: 700; margin: 4px 0 2px; }
-  .kpi.blue .value { color: var(--accent); }
-  .kpi.purple .value { color: var(--accent2); }
-  .kpi.green .value { color: var(--green); }
-  .kpi.yellow .value { color: var(--yellow); }
-  .kpi .change { font-size: 0.72rem; }
-  .kpi .change.up { color: var(--green); }
-  .kpi .change.down { color: var(--red); }
-
-  /* Chart Section */
-  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 12px 16px 0; }
-  .chart-card h2 { font-size: 0.9rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .bar-chart { display: flex; gap: 6px; align-items: flex-end; height: 120px; }
-  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .bar-wrap { flex: 1; display: flex; align-items: flex-end; width: 100%; }
-  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.6s ease; min-height: 4px; position: relative; cursor: pointer; }
-  .bar:hover { opacity: 0.8; }
-  .bar-label { font-size: 0.62rem; color: var(--muted); }
-  .bar-val { font-size: 0.62rem; color: var(--text); }
-
-  /* Category Donut */
-  .donut-section { margin: 12px 16px 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-  .donut-section h2 { font-size: 0.9rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .donut-wrap { display: flex; align-items: center; gap: 16px; }
-  .donut-chart { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
-  .donut-chart svg { transform: rotate(-90deg); }
-  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
-  .donut-center .d-val { font-size: 1rem; font-weight: 700; color: var(--accent); }
-  .donut-center .d-label { font-size: 0.6rem; color: var(--muted); }
-  .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 7px; }
-  .legend-row { display: flex; align-items: center; gap: 8px; }
-  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-  .legend-name { font-size: 0.75rem; flex: 1; }
-  .legend-pct { font-size: 0.75rem; font-weight: 600; color: var(--text); }
-
-  /* Add Sale */
-  .add-card { margin: 12px 16px 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-  .add-card h2 { font-size: 0.9rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .form-grid .full { grid-column: 1 / -1; }
-  input, select {
-    width: 100%; background: var(--card2); border: 1px solid var(--border); border-radius: 7px;
-    padding: 9px 11px; color: var(--text); font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.83rem; outline: none; transition: border-color 0.2s;
-  }
-  input:focus, select:focus { border-color: var(--accent); }
-  input::placeholder { color: var(--muted); }
-  select option { background: var(--card2); }
-  .add-btn { width: 100%; margin-top: 10px; padding: 11px; background: var(--accent); color: #070b14; border: none; border-radius: 7px; font-family: 'Space Grotesk', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; }
-
-  /* Recent Sales */
-  .recent-card { margin: 12px 16px 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-  .recent-card h2 { font-size: 0.9rem; font-weight: 600; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .sale-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
-  .sale-row:last-child { border-bottom: none; }
-  .sale-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
-  .sale-info { flex: 1; min-width: 0; }
-  .sale-info .s-name { font-size: 0.85rem; font-weight: 500; }
-  .sale-info .s-meta { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
-  .sale-right { text-align: right; }
-  .sale-right .s-amt { font-size: 0.9rem; font-weight: 700; color: var(--green); }
-  .empty { text-align: center; padding: 20px; color: var(--muted); font-size: 0.82rem; }
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sales Analytics Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
-<header>
-  <div>
-    <h1>📈 Sales Analytics</h1>
-    <p id="header-date"></p>
-  </div>
-  <div class="live-dot">Live</div>
-</header>
-
-<div class="filters">
-  <button class="filter-btn active" onclick="setFilter('all',this)">All Time</button>
-  <button class="filter-btn" onclick="setFilter('month',this)">This Month</button>
-  <button class="filter-btn" onclick="setFilter('week',this)">This Week</button>
-  <button class="filter-btn" onclick="setFilter('today',this)">Today</button>
-</div>
-
-<div class="kpis">
-  <div class="kpi blue"><div class="label">Total Revenue</div><div class="value" id="kpi-revenue">₹0</div><div class="change up" id="kpi-rev-change">— sales</div></div>
-  <div class="kpi green"><div class="label">Total Sales</div><div class="value" id="kpi-sales">0</div><div class="change" id="kpi-avg">Avg ₹0</div></div>
-  <div class="kpi purple"><div class="label">Top Category</div><div class="value" id="kpi-top-cat" style="font-size:1rem">—</div><div class="change up" id="kpi-top-pct">—</div></div>
-  <div class="kpi yellow"><div class="label">Best Product</div><div class="value" id="kpi-best-prod" style="font-size:0.85rem;margin-top:6px">—</div></div>
-</div>
-
-<div class="chart-card">
-  <h2>📊 Monthly Revenue</h2>
-  <div class="bar-chart" id="bar-chart">
-    <div class="empty" style="width:100%">No data yet. Add sales below.</div>
-  </div>
-</div>
-
-<div class="donut-section">
-  <h2>🍩 Category Split</h2>
-  <div class="donut-wrap">
-    <div class="donut-chart">
-      <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="38" fill="none" stroke="#1e2d44" stroke-width="18"/>
-        <g id="donut-arcs"></g>
-      </svg>
-      <div class="donut-center"><div class="d-val" id="donut-total">₹0</div><div class="d-label">Total</div></div>
-    </div>
-    <div class="donut-legend" id="donut-legend"><div class="empty">No data.</div></div>
-  </div>
-</div>
-
-<div class="add-card">
-  <h2>➕ Add Sale</h2>
-  <div class="form-grid">
-    <div><input id="s-product" placeholder="Product name"/></div>
-    <div><input id="s-amount" type="number" placeholder="Amount (₹)" min="0"/></div>
+  <header>
     <div>
-      <select id="s-category">
-        <option>Electronics</option><option>Clothing</option><option>Food & Beverage</option>
-        <option>Books</option><option>Sports</option><option>Home & Decor</option><option>Other</option>
-      </select>
+      <h1>📈 Sales Analytics Dashboard</h1>
+      <p id="header-date"></p>
     </div>
-    <div><input id="s-date" type="date"/></div>
+    <div class="live-dot">Live</div>
+  </header>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All Time</button>
+    <button class="filter-btn" onclick="setFilter('month',this)">This Month</button>
+    <button class="filter-btn" onclick="setFilter('week',this)">This Week</button>
+    <button class="filter-btn" onclick="setFilter('today',this)">Today</button>
   </div>
-  <button class="add-btn" onclick="addSale()">+ Add Sale</button>
-</div>
 
-<div class="recent-card">
-  <h2>🧾 Recent Sales</h2>
-  <div id="recent-sales"><div class="empty">No sales yet.</div></div>
-</div>
+  <div class="kpis">
+    <div class="kpi blue"><div class="label">Total Revenue</div><div class="value" id="kpi-revenue">₹0</div><div class="change" id="kpi-rev-change">— sales</div></div>
+    <div class="kpi green"><div class="label">Total Sales</div><div class="value" id="kpi-sales">0</div><div class="change" id="kpi-avg">Avg ₹0</div></div>
+    <div class="kpi purple"><div class="label">Top Category</div><div class="value" id="kpi-top-cat" style="font-size:1rem">—</div><div class="change" id="kpi-top-pct">—</div></div>
+    <div class="kpi yellow"><div class="label">Best Product</div><div class="value" id="kpi-best-prod" style="font-size:0.85rem;margin-top:6px">—</div></div>
+  </div>
 
-<script>
-const CAT_COLORS = { Electronics:'#00d4ff', Clothing:'#7c3aed', 'Food & Beverage':'#00e676', Books:'#ffd740', Sports:'#ff5252', 'Home & Decor':'#ff6d00', Other:'#5c7a9e' };
-const CAT_ICONS  = { Electronics:'💻', Clothing:'👕', 'Food & Beverage':'🍔', Books:'📚', Sports:'⚽', 'Home & Decor':'🏠', Other:'📦' };
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  <div class="chart-card">
+    <h2>📊 Monthly Revenue</h2>
+    <div class="bar-chart" id="bar-chart"><div class="empty" style="width:100%">No data yet.</div></div>
+  </div>
 
-let sales = JSON.parse(localStorage.getItem('sad_sales') || '[]');
-let currentFilter = 'all';
-
-document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-document.getElementById('s-date').value = new Date().toISOString().split('T')[0];
-
-function setFilter(f, el) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  render();
-}
-
-function getFiltered() {
-  const now = new Date();
-  return sales.filter(s => {
-    const d = new Date(s.date);
-    if (currentFilter === 'today') return d.toDateString() === now.toDateString();
-    if (currentFilter === 'week') return (now - d) <= 7*24*60*60*1000;
-    if (currentFilter === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    return true;
-  });
-}
-
-function addSale() {
-  const product = document.getElementById('s-product').value.trim();
-  const amount = parseFloat(document.getElementById('s-amount').value);
-  const category = document.getElementById('s-category').value;
-  const date = document.getElementById('s-date').value;
-  if (!product || isNaN(amount) || amount <= 0) { alert('Fill product name and valid amount.'); return; }
-  sales.unshift({ id: Date.now(), product, amount, category, date });
-  localStorage.setItem('sad_sales', JSON.stringify(sales));
-  document.getElementById('s-product').value = '';
-  document.getElementById('s-amount').value = '';
-  render();
-}
-
-function fmt(n) { return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
-
-function render() {
-  const filtered = getFiltered();
-  const total = filtered.reduce((a, s) => a + s.amount, 0);
-  const avg = filtered.length ? total / filtered.length : 0;
-
-  document.getElementById('kpi-revenue').textContent = fmt(total);
-  document.getElementById('kpi-sales').textContent = filtered.length;
-  document.getElementById('kpi-rev-change').textContent = filtered.length + ' sale' + (filtered.length !== 1 ? 's' : '');
-  document.getElementById('kpi-avg').textContent = 'Avg ' + fmt(avg);
-
-  // Category totals
-  const catTotals = {};
-  filtered.forEach(s => { catTotals[s.category] = (catTotals[s.category] || 0) + s.amount; });
-  const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
-  if (sortedCats.length > 0) {
-    document.getElementById('kpi-top-cat').textContent = CAT_ICONS[sortedCats[0][0]] + ' ' + sortedCats[0][0];
-    document.getElementById('kpi-top-pct').textContent = total > 0 ? ((sortedCats[0][1]/total)*100).toFixed(0) + '% of revenue' : '—';
-  } else {
-    document.getElementById('kpi-top-cat').textContent = '—';
-    document.getElementById('kpi-top-pct').textContent = '—';
-  }
-
-  // Best product
-  const prodTotals = {};
-  filtered.forEach(s => { prodTotals[s.product] = (prodTotals[s.product] || 0) + s.amount; });
-  const sortedProds = Object.entries(prodTotals).sort((a, b) => b[1] - a[1]);
-  document.getElementById('kpi-best-prod').textContent = sortedProds.length > 0 ? sortedProds[0][0] : '—';
-
-  // Bar chart — monthly
-  const monthlyTotals = {};
-  sales.forEach(s => {
-    const d = new Date(s.date);
-    const key = MONTHS[d.getMonth()] + ' ' + d.getFullYear().toString().slice(2);
-    monthlyTotals[key] = (monthlyTotals[key] || 0) + s.amount;
-  });
-  const monthEntries = Object.entries(monthlyTotals).slice(-6);
-  const barEl = document.getElementById('bar-chart');
-  if (monthEntries.length === 0) {
-    barEl.innerHTML = '<div class="empty" style="width:100%">No data yet.</div>';
-  } else {
-    const maxVal = Math.max(...monthEntries.map(e => e[1]));
-    barEl.innerHTML = monthEntries.map(([month, val]) => {
-      const h = Math.max(8, (val / maxVal) * 100);
-      return `<div class="bar-group">
-        <div class="bar-wrap"><div class="bar" style="height:${h}%;background:linear-gradient(180deg,var(--accent),var(--accent2))" title="${month}: ${fmt(val)}"></div></div>
-        <div class="bar-label">${month.split(' ')[0]}</div>
-      </div>`;
-    }).join('');
-  }
-
-  // Donut
-  document.getElementById('donut-total').textContent = fmt(total);
-  const donutEl = document.getElementById('donut-arcs');
-  const legendEl = document.getElementById('donut-legend');
-  if (sortedCats.length === 0) {
-    donutEl.innerHTML = '';
-    legendEl.innerHTML = '<div class="empty">No data.</div>';
-  } else {
-    const r = 38, circ = 2 * Math.PI * r;
-    let offset = 0;
-    donutEl.innerHTML = sortedCats.map(([cat, val]) => {
-      const pct = total > 0 ? val / total : 0;
-      const dash = pct * circ;
-      const el = `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${CAT_COLORS[cat]||'#888'}" stroke-width="18" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" />`;
-      offset += dash;
-      return el;
-    }).join('');
-    legendEl.innerHTML = sortedCats.slice(0, 4).map(([cat, val]) => `
-      <div class="legend-row">
-        <div class="legend-dot" style="background:${CAT_COLORS[cat]||'#888'}"></div>
-        <div class="legend-name">${cat}</div>
-        <div class="legend-pct">${total > 0 ? ((val/total)*100).toFixed(0) : 0}%</div>
-      </div>`).join('');
-  }
-
-  // Recent Sales
-  const recentEl = document.getElementById('recent-sales');
-  if (filtered.length === 0) { recentEl.innerHTML = '<div class="empty">No sales in this period.</div>'; return; }
-  recentEl.innerHTML = filtered.slice(0, 8).map(s => `
-    <div class="sale-row">
-      <div class="sale-icon" style="background:${CAT_COLORS[s.category]||'#888'}22">${CAT_ICONS[s.category]||'📦'}</div>
-      <div class="sale-info">
-        <div class="s-name">${s.product}</div>
-        <div class="s-meta">${s.category} · ${s.date}</div>
+  <div class="donut-section">
+    <h2>🍩 Category Split</h2>
+    <div class="donut-wrap">
+      <div class="donut-chart">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="38" fill="none" stroke="#1e2d44" stroke-width="18"/>
+          <g id="donut-arcs"></g>
+        </svg>
+        <div class="donut-center"><div class="d-val" id="donut-total">₹0</div><div class="d-label">Total</div></div>
       </div>
-      <div class="sale-right"><div class="s-amt">${fmt(s.amount)}</div></div>
-    </div>`).join('');
-}
+      <div class="donut-legend" id="donut-legend"><div class="empty">No data.</div></div>
+    </div>
+  </div>
 
-render();
-</script>
+  <div class="add-card">
+    <h2>➕ Add Sale</h2>
+    <div class="form-grid">
+      <div><input id="s-product" placeholder="Product name"/></div>
+      <div><input id="s-amount" type="number" placeholder="Amount (₹)" min="0"/></div>
+      <div>
+        <select id="s-category">
+          <option>Electronics</option><option>Clothing</option><option>Food &amp; Beverage</option>
+          <option>Books</option><option>Sports</option><option>Home &amp; Decor</option><option>Other</option>
+        </select>
+      </div>
+      <div><input id="s-date" type="date"/></div>
+    </div>
+    <button class="add-btn" onclick="addSale()">+ Add Sale</button>
+  </div>
+
+  <div class="recent-card">
+    <h2>🧾 Recent Sales</h2>
+    <div id="recent-sales"><div class="empty">No sales yet.</div></div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
